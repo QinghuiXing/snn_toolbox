@@ -39,8 +39,8 @@ class SNN(AbstractSNN):
         self.layers = []
         self.connection = []
         # TODO: 怎么设置每层的v_th?
-        self.v_th = 10
-        self.neuron_model = 'IF'
+        self.v_th = 1.0
+        self.neuron_model = 'lif'
         self.statemonitors = []
         self.spikemonitors = []
         self.snn = None
@@ -54,9 +54,11 @@ class SNN(AbstractSNN):
 
     def add_input_layer(self, input_shape):
 
-        self.layers.append(self.sim.NeuronGroup(
-            neuron_number=np.prod(input_shape[1:]),
-            neuron_model=self.neuron_model, v_th=self.v_th))
+        self.layers.append(
+            self.sim.Input(num=np.prod(input_shape[1:])))
+        # self.layers.append(self.sim.NeuronGroup(
+        #     neuron_number=np.prod(input_shape[1:]),
+        #     neuron_model=self.neuron_model, v_th=self.v_th))
         self.spikemonitors.append(self.sim.SpikeMonitor(self.layers[0]))
         self.statemonitors.append(self.sim.StateMonitor(self.layers[0], 'V'))
 
@@ -67,13 +69,21 @@ class SNN(AbstractSNN):
         if 'Flatten' in layer.__class__.__name__ and \
                 self.config.get('input', 'model_lib') == 'keras':
             self.flatten_shapes.append(
-                (layer.name, get_shape_from_label(self.layers[-1].label)))
+                #   TODO: spaic没有内置函数 add_attribute(), 、
+                #    直接传入 self.layers[-1].name，设法使用spaic内置函数
+                (layer.name, get_shape_from_label(self.layers[-1].name)))
             return
 
         self.layers.append(self.sim.NeuronGroup(
             neuron_number=np.prod(layer.output_shape[1:]),
             neuron_model=self.neuron_model, v_th=self.v_th))
         # spaic创建spaic.Connection需要立即给出权重，所以此处不创建连接
+
+        #   TODO: spaic没有内置函数 add_attribute(), 、
+        #    设法使用spaic内置函数
+        # self.layers[-1].add_attribute('label')
+        # self.layers[-1].label = layer.name
+        self.layers[-1].name = layer.name
 
         # 不考虑AbstractSNN的细节，暂时直接创建SpikeMonitor和StateMonitor
         self.spikemonitors.append(self.sim.SpikeMonitor(self.layers[-1]))
@@ -121,9 +131,9 @@ class SNN(AbstractSNN):
         connections = np.array(conns)
 
         # TODO: 验证spaic.NeuronGroup神经元数量是否为 spaic.NeuronGroup.num
-        weights = np.zeros((self.layers[-2].num, self.layers[-1].num))
+        weights = np.zeros((self.layers[-1].num, self.layers[-2].num))
         for i, j, w, _ in connections:
-            weights[j][i] = w
+            weights[j.astype('int64')][i.astype('int64')] = w
 
         self.set_biases(biases)
 
@@ -142,9 +152,11 @@ class SNN(AbstractSNN):
         connections = np.array(build_pooling(layer, delay))
 
         # TODO: 验证spaic.NeuronGroup神经元数量是否为 spaic.NeuronGroup.num
-        weights = np.zeros((self.layers[-2].num, self.layers[-1].num))
+        weights = np.zeros((self.layers[-1].num, self.layers[-2].num))
         for i, j, w, _ in connections:
-            weights[j][i] = w
+            weights[j.astype('int64')][i.astype('int64')] = w
+
+
 
         print("Connecting layer...")
 
@@ -157,7 +169,7 @@ class SNN(AbstractSNN):
     def compile(self):
 
         self.output_spikemonitor = self.sim.SpikeMonitor(self.layers[-1])
-        self.snn = self.sim.Network(self.config.get('path', 'filename_ann'))
+        self.snn = self.sim.Network(self.config.get('paths', 'filename_ann'))
 
         self.snn.input = self.layers[0]
 
@@ -179,7 +191,9 @@ class SNN(AbstractSNN):
         inputs = kwargs[str('x_b_l')]
         spikes = self.encode(inputs, time_window, dt)
 
-        sim = self.sim.Backend(self.snn, 'emu', dt=0.1, device={'platform':'simulator'})
+        from wuyuan import Backend
+
+        sim = Backend(self.snn, 'emu', dt=0.1, device={'platform':'simulator'})
 
         self.snn.input(spikes)
         sim.run(time_window)
@@ -216,7 +230,7 @@ class SNN(AbstractSNN):
             batch_size = input.shape[0]
             flatten_img = input.reshape(batch_size, -1)/255
             spikes = np.array([np.random.rand(
-                int(time_window / dt), flt_img.size).__le__(flt_img * dt).astype(float) for flt_img in flatten_img])
+                int(time_window / dt), flt_img.size).__le__(flt_img * dt).astype(float) for flt_img in flatten_img]).astype(np.float32)
             return spikes
         # TODO: 音频信号编码
         elif data_type == 'audio':

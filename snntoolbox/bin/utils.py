@@ -557,6 +557,8 @@ def initialize_simulator(config):
         # have been created in the meantime."
         sim.setup(timestep=config.getfloat('simulation', 'dt'))
         return sim
+    if simulator == 'spaic':
+        return import_module('spaic','wuyuan')
     if simulator == 'brian2':
         return import_module('brian2')
     if simulator == 'loihi':

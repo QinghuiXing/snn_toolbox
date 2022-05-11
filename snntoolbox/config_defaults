@@ -122,7 +122,7 @@ frame_gen_method = {'signed_sum', 'rectified_sum',
                     'rectified_polarity_channels', 'signed_polarity_channels'}
 maxpool_types = {'fir_max', 'exp_max', 'avg_max'}
 simulators_pyNN = {'nest', 'brian', 'neuron', 'spiNNaker'}
-simulators_other = {'INI', 'brian2', 'MegaSim', 'loihi'}
+simulators_other = {'INI', 'brian2', 'MegaSim', 'loihi', 'spaic'}
 simulators = %(simulators_pyNN)s | %(simulators_other)s
 # Keras backends:
 keras_backends = {'theano', 'tensorflow'}

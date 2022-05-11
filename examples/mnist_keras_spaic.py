@@ -12,17 +12,20 @@ from tensorflow.keras.utils import to_categorical
 from snntoolbox.bin.run import main
 from snntoolbox.utils.utils import import_configparser
 
-from wuyuan.wuyuan import spaic
+from wuyuan import spaic
 
 # WORKING DIRECTORY #
 #####################
 
 # Define path where model and output files will be stored.
 # The user is responsible for cleaning up this temporary directory.
+
 path_wd = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(
     __file__)), '..', 'temp', str(time.time())))
 os.makedirs(path_wd)
 
+# path_wd = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(
+#     __file__)), '..', 'temp', 'test'))
 
 # GET DATASET #
 ###############
@@ -123,6 +126,7 @@ config['simulation'] = {
 config['input'] = {
     'poisson_input': False          # Images are encodes as spike trains.
 }
+
 #
 # config['output'] = {
 #     'plot_vars': {                  # Various plots (slows down simulation).
