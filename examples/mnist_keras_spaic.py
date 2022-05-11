@@ -115,7 +115,7 @@ config['tools'] = {
 
 config['simulation'] = {
     'simulator': 'spaic',          # Chooses execution backend of SNN toolbox.
-    'duration': 50,                 # Number of time steps to run each sample.
+    'duration': 20,                 # Number of time steps to run each sample.
     'num_to_test': 5,               # How many test samples to run.
     'batch_size': 1,                # Batch size for simulation.
     'dt': 0.1,                       # Time resolution for ODE solving.
@@ -128,15 +128,15 @@ config['input'] = {
 }
 
 #
-# config['output'] = {
-#     'plot_vars': {                  # Various plots (slows down simulation).
-#         'spiketrains',              # Leave section empty to turn off plots.
-#         'spikerates',
-#         'activations',
-#         'correlation',
-#         'v_mem',
-#         'error_t'}
-# }
+config['output'] = {
+    'plot_vars': {                  # Various plots (slows down simulation).
+        'spiketrains',              # Leave section empty to turn off plots.
+        'spikerates',
+        'activations',
+        'correlation',
+        'v_mem',
+        'error_t'}
+}
 
 # Store config file.
 config_filepath = os.path.join(path_wd, 'config')

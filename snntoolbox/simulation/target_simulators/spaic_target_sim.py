@@ -230,7 +230,8 @@ class SNN(AbstractSNN):
             batch_size = input.shape[0]
             flatten_img = input.reshape(batch_size, -1)/255
             spikes = np.array([np.random.rand(
-                int(time_window / dt), flt_img.size).__le__(flt_img * dt).astype(float) for flt_img in flatten_img]).astype(np.float32)
+                # int(time_window / dt), flt_img.size).__le__(flt_img * dt).astype(float) for flt_img in flatten_img]).astype(np.float32)
+                int(time_window / dt), flt_img.size).__le__(flt_img).astype(float) for flt_img in flatten_img]).astype(np.float32)
             return spikes
         # TODO: 音频信号编码
         elif data_type == 'audio':
