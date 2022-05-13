@@ -40,7 +40,11 @@ class SNN(AbstractSNN):
         self.connection = []
         # TODO: 怎么设置每层的v_th?
         self.v_th = 1.0
-        self.neuron_model = 'lif'
+        # self.v_reset = 0.0
+        # self.tau_p = 4.0
+        # self.tau_q = 1.0
+        # self.tau_m = 6.0
+        self.neuron_model = 'IF'
         self.statemonitors = []
         self.spikemonitors = []
         self.snn = None
@@ -102,16 +106,37 @@ class SNN(AbstractSNN):
 
         self.set_biases(biases)
 
+
         # TODO: spaic神经元模型暂时没用到delay
         delay = self.config.getfloat('cell', 'delay')
 
         if len(self.flatten_shapes) == 1:
             print("Swapping data_format of Flatten layer.")
             flatten_name, shape = self.flatten_shapes.pop()
+            new_weights = np.zeros(weights.shape)
 
-        # TODO: 暂时不处理Flatten
-        if self.data_format == 'channels_last':
-            pass
+            if self.data_format == 'channels_last':
+                y_in, x_in, f_in = shape
+            else:
+                f_in, y_in, x_in = shape
+            for i in range(weights.shape[0]):  # Input neurons
+                # Sweep across channel axis of feature map. Assumes that each
+                # consecutive input neuron lies in a different channel. This is
+                # the case for channels_last, but not for channels_first.
+                f = i % f_in
+                # Sweep across height of feature map. Increase y by one if all
+                # rows along the channel axis were seen.
+                y = i // (f_in * x_in)
+                # Sweep across width of feature map.
+                x = (i // f_in) % x_in
+                new_i = f * x_in * y_in + x_in * y + x
+                for j in range(weights.shape[1]):  # Output neurons
+                    new_weights[new_i][j] = weights[i][j]
+                    # connections.append((new_i, j, weights[i, j], delay))
+            self.connection.append(self.sim.Connection(
+                self.layers[-2], self.layers[-1],
+                link_type='full', weights=new_weights.transpose()))
+
         elif len(self.flatten_shapes) > 1:
             raise RuntimeWarning("Not all Flatten layers have been consumed.")
         else:
@@ -151,16 +176,14 @@ class SNN(AbstractSNN):
         delay = self.config.getfloat('cell', 'delay')
         connections = np.array(build_pooling(layer, delay))
 
-        # TODO: 验证spaic.NeuronGroup神经元数量是否为 spaic.NeuronGroup.num
         weights = np.zeros((self.layers[-1].num, self.layers[-2].num))
         for i, j, w, _ in connections:
             weights[j.astype('int64')][i.astype('int64')] = w
 
 
-
         print("Connecting layer...")
 
-        # TODO: spaic只支持全连接，卷积转换后一定是全连接吗？将connections中不存在的神经元连接weight设为0
+        # TODO: 暂时将connections中不存在的神经元连接weight设为0
         self.connection.append(self.sim.Connection(
             self.layers[-2], self.layers[-1],
             link_type='full', weight=weights))
@@ -175,6 +198,8 @@ class SNN(AbstractSNN):
 
         for id, layer in enumerate(self.layers[1:]):
             self.snn.add_assembly(name='layer'+str(id), assembly=layer)
+            # TODO: AttributeError: 'Network' object has no attribute 'add_monitor'
+            # self.snn.add_monitor('spike_monitor_'+str(id), self.sim.SpikeMonitor(layer))
 
         for id, conn in enumerate(self.connection):
             self.snn.add_connection(name='connection'+str(id), connection=conn)
@@ -228,7 +253,7 @@ class SNN(AbstractSNN):
         # TODO: 默认灰度图像，数值范围0-255，1 channel
         if data_type == 'vision':
             batch_size = input.shape[0]
-            flatten_img = input.reshape(batch_size, -1)/255
+            flatten_img = input.reshape(batch_size, -1)
             spikes = np.array([np.random.rand(
                 # int(time_window / dt), flt_img.size).__le__(flt_img * dt).astype(float) for flt_img in flatten_img]).astype(np.float32)
                 int(time_window / dt), flt_img.size).__le__(flt_img).astype(float) for flt_img in flatten_img]).astype(np.float32)

@@ -22,10 +22,9 @@ from wuyuan import spaic
 
 path_wd = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(
     __file__)), '..', 'temp', str(time.time())))
-os.makedirs(path_wd)
-
 # path_wd = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(
-#     __file__)), '..', 'temp', 'test'))
+    # __file__)), '..', 'temp', 'test'))
+os.makedirs(path_wd)
 
 # GET DATASET #
 ###############
@@ -109,13 +108,13 @@ config['paths'] = {
 }
 
 config['tools'] = {
-    'evaluate_ann': True,           # Test ANN on dataset before conversion.
+    'evaluate_ann': False,           # Test ANN on dataset before conversion.
     'normalize': True,              # Normalize weights for full dynamic range.
 }
 
 config['simulation'] = {
     'simulator': 'spaic',          # Chooses execution backend of SNN toolbox.
-    'duration': 20,                 # Number of time steps to run each sample.
+    'duration': 50,                 # Number of time steps to run each sample.
     'num_to_test': 5,               # How many test samples to run.
     'batch_size': 1,                # Batch size for simulation.
     'dt': 0.1,                       # Time resolution for ODE solving.

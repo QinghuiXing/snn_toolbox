@@ -29,11 +29,13 @@ from snntoolbox.utils.utils import import_configparser
 # The user is responsible for cleaning up this temporary directory.
 path_wd = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(
     __file__)), '..', 'temp', str(time.time())))
+# path_wd = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(
+#     __file__)), '..', 'temp', 'test'))
 os.makedirs(path_wd)
-
+#
 # GET DATASET #
-###############
-
+# ##############
+#
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
 # Normalize input so we can train ANN with it.
@@ -127,6 +129,10 @@ config['simulation'] = {
 
 config['input'] = {
     'poisson_input': False          # Images are encodes as spike trains.
+}
+
+config['cell'] = {
+    'v_thresh' : 1
 }
 
 config['output'] = {

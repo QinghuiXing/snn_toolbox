@@ -71,8 +71,10 @@ class SNN(AbstractSNN):
         self._input_layer = None
         self._cell_params = None
 
+
         # Track the output layer spikes.
         self.output_spikemonitor = None
+
 
     @property
     def is_parallelizable(self):
@@ -146,7 +148,9 @@ class SNN(AbstractSNN):
             for i in range(weights.shape[0]):  # Input neurons
                 # Sweep across channel axis of feature map. Assumes that each
                 # consecutive input neuron lies in a different channel. This is
-                # the case for channels_last, but not for channels_first.
+                # the case for channels_
+                #
+                # last, but not for channels_first.
                 f = i % f_in
                 # Sweep across height of feature map. Increase y by one if all
                 # rows along the channel axis were seen.
@@ -177,6 +181,13 @@ class SNN(AbstractSNN):
             self.config.get('simulation', 'keras_backend') == 'tensorflow'
         conns, biases = build_convolution(layer, delay, transpose_kernel)
         connections = np.array(conns)
+
+
+
+        new_weights = np.zeros((self.layers[-1].stop, self.layers[-2].stop))
+        for i, j, w, _ in connections:
+            new_weights[j.astype('int64')][i.astype('int64')] = w
+
 
         self.set_biases(biases)
 
@@ -228,6 +239,7 @@ class SNN(AbstractSNN):
                      report='stdout', report_period=10 * self.sim.ms)
 
         output_b_l_t = self.get_recorded_vars(self.layers)
+
 
         return output_b_l_t
 
